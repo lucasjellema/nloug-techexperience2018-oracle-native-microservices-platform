@@ -56,9 +56,9 @@ app.get('/kill', function (req, res) {
 app.get('/', function (req, res) {
     if (!dead) {
         res.statusCode = 200;
-        res.write('Request Count: ' + ++requestCounter);
-        res.write('Response from Version Request Count: ' + version);
-        res.write('Response from Host : ' + hostname);
+        res.write('Request Count: ' + ++requestCounter+'\n');
+        res.write('Response from Version Request Count: ' + version+'\n');
+        res.write('Response from Host : ' + hostname+'\n');
         res.end();
     } else {
         res.statusCode = 400;
