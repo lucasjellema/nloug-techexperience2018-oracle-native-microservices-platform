@@ -1,0 +1,74 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: request-counter-ms-deployment
+spec:
+  replicas: 2 # tells deployment to run 1 pod matching the template
+  template: # create pods using pod definition in this template
+    metadata:
+      #  the name for the pods is not included in the meta data as a unique name is
+      #  generated from the deployment name
+      labels:
+        app: request-counter-ms
+    spec:
+      containers:
+      - name: request-counter-ms
+        # get latest version of image
+        image: lucasjellema/node-app-runner
+        imagePullPolicy: IfNotPresent
+        readinessProbe:
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          httpGet:                  
+            path: /ready                 
+            port: 8091         
+        livenessProbe:    
+          periodSeconds: 2
+          httpGet:     
+            path: /health    
+            port: 8091                  
+        env:
+          - name: GIT_URL
+            value: "https://github.com/lucasjellema/nloug-techexperience2018-oracle-native-microservices-platform"
+          - name: APP_PORT
+            value: "8091"
+          - name: APP_HOME
+            value: "request-counter-on-k8s"
+          - name: APP_STARTUP
+            value: "requestCounter-v1.js"
+        ports:
+        # containerPort is the port exposed by the container (where nodejs is listening for http requests)
+          - containerPort: 8091
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: requestcounterservice
+  name: requestcounterservice
+spec:
+  ports:
+    # The port that this service should serve on.
+    - port: 8091
+      targetPort: 8091
+  # Label keys and values that must match in order to receive traffic for this service.
+  selector:
+    app: request-counter-ms
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: request-counter-ingress
+  annotations:
+    kubernetes.io/ingress.class: 'nginx'
+spec:
+  tls:
+  - secretName: tls-secret
+  rules:
+  - http:
+      paths:
+      - path: /request-counter
+        backend:
+          serviceName: requestcounterservice
+          servicePort: 8091
